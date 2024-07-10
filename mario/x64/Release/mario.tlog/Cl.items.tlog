@@ -1,0 +1,14 @@
+C:\Users\bpree\cprac\mario\ImGui-sfml\imgui-SFML.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui-SFML.obj
+C:\Users\bpree\cprac\mario\ImGui-sfml\Source.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\Source.obj
+C:\Users\bpree\cprac\mario\imgui\imgui.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_demo.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_demo.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_draw.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_draw.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_impl_dx12.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_impl_dx12.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_impl_win32.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_impl_win32.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_tables.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_tables.obj
+C:\Users\bpree\cprac\mario\imgui\imgui_widgets.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\imgui_widgets.obj
+C:\Users\bpree\cprac\mario\mario\Animations.h;C:\Users\bpree\cprac\mario\mario\x64\Release\Animations.obj
+C:\Users\bpree\cprac\mario\mario\Assets.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\Assets.obj
+C:\Users\bpree\cprac\mario\mario\EntityManager.h;C:\Users\bpree\cprac\mario\mario\x64\Release\EntityManager.obj
+C:\Users\bpree\cprac\mario\mario\mario.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\mario.obj
+C:\Users\bpree\cprac\mario\mario\Home.cpp;C:\Users\bpree\cprac\mario\mario\x64\Release\Home.obj

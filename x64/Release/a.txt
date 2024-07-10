@@ -1,0 +1,7 @@
+0 isplayer
+1 isenemy
+2 isphysical
+3 isobjectrans
+4 isdeathanimation
+5 isgravity
+6 isbullet
