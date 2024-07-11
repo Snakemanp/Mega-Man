@@ -13,6 +13,7 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #include "NewSprite.h"
+#include<Windows.h>
 
 class Home {
     sf::RenderWindow& window;
@@ -32,7 +33,10 @@ class Home {
     MySprite* wintemp = nullptr;
     bool spr_win = false;
     bool player_found = false;
-
+    int leftx=0, bottomy=0, winx=0;
+    std::string existing_l;
+    bool writing = false;
+    char buffer[30];
 public:
     Home(sf::RenderWindow& window_, assets &a_) : window(window_) ,a(a_) {
         ImGui::SFML::Init(window);
@@ -75,8 +79,8 @@ public:
     }
 
     void handleDrop(sf::Event &event) {
+        if (writing) return;
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && !spr_win) {
-            std::cout << sprites.size() << " Sprites present\n";
             if (curscene == 1 && temp) {
                 sprites.push_back(temp);
                 temp = nullptr;
@@ -84,20 +88,19 @@ public:
             }
             if (curscene == 1 && dragdone) {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
                 if (temp) delete temp;
-                temp = getClickedSprite(mousePos);
+                temp = getClickedSprite(worldPos);
                 if(temp) drag = true;
             }
             if (!drag) dragdone = true;
             if (drag) dragdone = false;
-            if (drag) std::cout << "Dragging ";
-            if (dragdone) std::cout << "Dragdone";
-            std::cout << '\n';
         }
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right && !drag) {
             if (!spr_win) {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                wintemp = getClickedSprite(mousePos);
+                sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+                wintemp = getClickedSprite(worldPos);
                 if (wintemp) spr_win = true;
                 else spr_win = false;
                 return;
@@ -106,6 +109,24 @@ public:
                 if (wintemp)sprites.push_back(wintemp);
                 spr_win = false;
                 wintemp = nullptr;
+            }
+        }
+        if (event.type == sf::Event::KeyPressed) {
+            if (curscene == 1) {
+                sf::View view = window.getView();
+                if (event.key.code == sf::Keyboard::D) {
+                    view.move(20, 0);
+                }
+                if (event.key.code == sf::Keyboard::A) {
+                    view.move(-20, 0);
+                }
+                if (event.key.code == sf::Keyboard::W) {
+                    view.move(0, -20); // Move up
+                }
+                if (event.key.code == sf::Keyboard::S) {
+                    view.move(0, 20); // Move down
+                }
+                window.setView(view);
             }
         }
     }
@@ -120,6 +141,7 @@ private:
         if (font0) ImGui::PushFont(font0);
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::MenuItem("Home")) {
+                reset();
                 curscene = 0;
             }
             if (ImGui::BeginMenu("Play")) {
@@ -127,25 +149,57 @@ private:
                 for (std::pair<std::string, std::string>& level : levels) {
                     if (ImGui::MenuItem(level.first.c_str())) {
                         str = level.second;
+                        reset();
                     }
                 }
                 ImGui::EndChild();
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Create")) {
-                if (ImGui::MenuItem("New Level")) {
-                    curscene = 1;
+                if (ImGui::BeginMenu("New Level")) {
+                    if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                        if (existing_l != "") {
+                            write_level(existing_l);
+                        }
+                        else if(sprites.size()!=0 && player_found) {
+                            writing = true;
+                        }
+                        else {
+                            MessageBox(NULL, L"InCorrect Format", L"Error", MB_OK | MB_ICONINFORMATION);
+                        }
+                    }
+                    if (ImGui::MenuItem("Create New")) {
+                        reset();
+                        curscene = 1;
+                    }
+                    if (ImGui::BeginMenu("Load Existing level")) {
+                        ImGui::BeginChild("ScrollingRegion", ImVec2(130, 100), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                        for (std::pair<std::string, std::string>& level : levels) {
+                            if (ImGui::MenuItem(level.first.c_str())) {
+                                reset();
+                                curscene = 1;
+                                existing_l = level.second;
+                                Load_from_existing(level.second);
+                            }
+                        }
+                        ImGui::EndChild();
+                        ImGui::EndMenu();
+                    }
+                    ImGui::EndMenu();
                 }
                 if (ImGui::MenuItem("Animations")) {
+                    reset();
                     curscene = 2;
                 }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Settings")) {
                 if (ImGui::MenuItem("Option 1")) {
+                    reset();
                     curscene = 3;
                 }
                 if (ImGui::MenuItem("Option 2")) {
+                    reset();
                     curscene = 4;
                 }
                 ImGui::EndMenu();
@@ -191,10 +245,11 @@ private:
                 if (ImGui::ImageButton(texID, ImVec2(40, 40))) {
                     if (!drag && !spr_win) {
                         sf::Vector2i mpos = sf::Mouse::getPosition(window);
+                        sf::Vector2f wpos = window.mapPixelToCoords(mpos);
                         temp = new MySprite(asset.first, asset.second[0]);
                         sf::Vector2u temp_size = asset.second[0].getSize();
                         temp->sprite->setOrigin(temp_size.x / 2, temp_size.y / 2);
-                        temp->sprite->setPosition(mpos.x, mpos.y);
+                        temp->sprite->setPosition(wpos.x, wpos.y);
                         drag = true;
                         dragdone = false;
                         break;
@@ -213,10 +268,21 @@ private:
             ImGui::EndTable();
         }
         if (font0) ImGui::PopFont();
+        ImGui::SeparatorText("winning and world positions");
+        ImGui::InputInt("Winning X:", &winx);
+        ImGui::InputInt("Left World X: ", &leftx);
+        ImGui::InputInt("Bootom World Y: ", &bottomy);
+        ImGui::TextDisabled("Enter cordinates of world like left most x cordinate of world and bottom most y cordinate in world");
 
         sf::Vector2i Pos = sf::Mouse::getPosition(window);
+        sf::Vector2f wPos = window.mapPixelToCoords(Pos);
         ImGui::SeparatorText("Mouse position");
-        ImGui::Text("X: %d  Y: %d", (int)Pos.x, (int)Pos.y);
+        ImGui::Text("X: %d  Y: %d", (int)wPos.x, (int)wPos.y);
+
+        ImGui::SeparatorText("Create Level");
+        if(ImGui::Button("Save")) {
+
+        }
 
         ImGui::End();
     }
@@ -238,8 +304,12 @@ private:
             window.draw(bgsp);
         }
         if (curscene == 1) {
-            render_Newlevel();
             draw_spaites();
+            if (writing) {
+                write_new_level();
+                return;
+            }
+            render_Newlevel();
         }
     }
 
@@ -270,7 +340,8 @@ private:
         }
         if (temp) {
             sf::Vector2i mpos = sf::Mouse::getPosition(window);
-            temp->sprite->setPosition(mpos.x, mpos.y);
+            sf::Vector2f wpos = window.mapPixelToCoords(mpos);
+            temp->sprite->setPosition(wpos.x, wpos.y);
             window.draw(*temp->sprite);
         }
         if (wintemp && spr_win) {
@@ -280,11 +351,10 @@ private:
         return;
     }
 
-    MySprite* getClickedSprite(const sf::Vector2i& mousePos) {
+    MySprite* getClickedSprite(const sf::Vector2f& worldPos) {
         MySprite* drag = nullptr;
         std::vector<MySprite*>::iterator it;
 
-        sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
         
         for (auto tsprite = sprites.rbegin(); tsprite != sprites.rend(); ++tsprite) {
             
@@ -303,8 +373,7 @@ private:
 
     void draw_sprie_win(MySprite* ptr) {
         sf::Vector2f pos = ptr->sprite->getPosition();
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
-        ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y));
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
         ImGui::SetNextWindowSize(ImVec2(300, 300));
         ImGui::Begin("Entity Properties",nullptr,windowFlags);
         ImGui::SeparatorText("Position");
@@ -314,6 +383,7 @@ private:
         int e = ptr->object_id % 8;
         bool isplayer=false;
         ImGui::SeparatorText("Entity Type");
+        ImGui::Text("Object Id: %d", ptr->object_id);
         if ((player_found && e != 1) == false) {
             ImGui::RadioButton("Player", &e, 1);
             if (player_found) isplayer = true;
@@ -348,8 +418,8 @@ private:
         if (e == 1 || objtrans) ptr->object_id |= (1 << 3);
         else ptr->object_id &= ~(1 << 3);
         if (e != 1 && objtrans) {
-            ImGui::InputFloat("X-Speed", &(ptr->velx));
-            ImGui::InputFloat("Y-Speed", &(ptr->vely));
+            ImGui::InputInt("X-Speed", &(ptr->velx));
+            ImGui::InputInt("Y-Speed", &(ptr->vely));
             ImGui::InputInt("Limit X-left", &(ptr->xl));
             ImGui::InputInt("Limit X-Right", &(ptr->xr));
             ImGui::InputInt("Limit Y-top", &(ptr->yt));
@@ -383,6 +453,9 @@ private:
             if (gravity) ptr->object_id |= (1 << 5);
             else ptr->object_id &= ~(1 << 5);
         }
+        else {
+            ptr->object_id |= (1 << 5);
+        }
         ImGui::SeparatorText("Delete Entity");
         if (ImGui::Button("Remove")) {
             if (isplayer) player_found = false;
@@ -390,6 +463,123 @@ private:
             wintemp = nullptr;
             spr_win = false;
         }
+        ImGui::End();
+    }
+
+    void Load_from_existing(std::string& level) {
+        sprites.clear();
+        std::ifstream Level(level);
+        MySprite* temp;
+        int objid, textureid,xpos,ypos;
+        
+        Level >> leftx >> bottomy >> winx;
+        while (Level >> objid >> textureid) {
+            temp = new MySprite(textureid, a.textures[textureid][0]);
+            temp->object_id = objid;
+            sf::Vector2u temp_size = a.textures[textureid][0].getSize();
+            temp->sprite->setOrigin(temp_size.x / 2, temp_size.y / 2);
+            if ((objid & 1) == 1) {
+                Level >> textureid;
+                temp->texture_id2 = textureid;
+            }
+            if (((objid >> 4) & 1) == 1) {
+                Level >> textureid;
+                temp->death = textureid;
+            }
+            Level >> xpos >> ypos;
+            temp->sprite->setPosition(xpos, ypos);
+            if ((objid & 1) == 1) {
+                sprites.push_back(temp);
+                continue;
+            }
+            if (((objid >> 3) & 1) == 1) {
+                Level >> xpos >> ypos;
+                temp->velx = xpos;
+                temp->vely = ypos;
+                Level >> xpos >> ypos;
+                temp->xl = xpos;
+                temp->xr = ypos;
+                Level >> xpos >> ypos;
+                temp->yt = xpos;
+                temp->yb = ypos;
+            }
+            sprites.push_back(temp);
+        }
+    }
+    void reset() {
+        if (curscene != 1) return;
+        sf::View view = window.getView();
+        view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
+        window.setView(view);
+        sprites.clear();
+        if (temp) delete temp;
+        drag = false;
+        dragdone = true;
+        spr_win = false;
+        leftx = 0;
+        bottomy = 0;
+        winx = 0;
+        existing_l = "";
+        writing = false;
+    }
+
+    void write_level(std::string &level) {
+        std::ofstream File(level,std::ios::trunc);
+        File << leftx << ' ' << bottomy << ' ' << winx<<'\n';
+        if (temp) sprites.push_back(temp);
+        for (MySprite*& x : sprites) {
+            File << x->object_id << ' '<<x->texture_id<<' ';
+            if (((x->object_id) & 1) == 1) {
+                File << x->texture_id2<<' ';
+            }
+            if (((x->object_id>>4) & 1) == 1) {
+                File << x->death << ' ';
+            }
+            sf::Vector2f pos = x->sprite->getPosition();
+            File << pos.x << ' ' << pos.y << ' ';
+            if ((x->object_id & 1) == 1) {
+                File << '\n';
+                continue;
+            }
+            if (((x->object_id >> 3) & 1) == 1) {
+                File << x->velx << ' ' << x->vely << ' ' << x->xl << ' ' << x->xr << ' ' << x->yt << ' ' << x->yb << ' ';
+            }
+            File << '\n';
+        }
+        reset();
+    }
+
+    void write_new_level() {
+        ImGui::Begin("File Name");
+
+        ImGui::InputText("Level Name", buffer, 30);
+
+        if (ImGui::Button("Cancel")) {
+            writing = false;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Save")) {
+            std::string levelName(buffer);
+            if (!levelName.empty()) {
+                std::string levelFileName = "Levels/" + levelName + ".txt";
+                write_level(levelFileName);
+                std::ofstream file("Levels.txt", std::ios::app);
+                if (file.is_open()) {
+                    file << levelName << "," << levelFileName << '\n';
+                    file.close();
+                }
+                else {
+                    MessageBox(NULL, L"Failed to open Levels.txt", L"Error", MB_OK | MB_ICONERROR);
+                }
+            }
+            else {
+                MessageBox(NULL, L"Level name cannot be empty", L"Error", MB_OK | MB_ICONERROR);
+            }
+            writing = false;
+        }
+
         ImGui::End();
     }
 
