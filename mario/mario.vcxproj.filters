@@ -25,6 +25,9 @@
     <Filter Include="Resource Files\Animations">
       <UniqueIdentifier>{9335c41e-3cd5-460b-9608-36d3931f38de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\SFML">
+      <UniqueIdentifier>{8403d3ab-a31c-4537-b603-5fadda48d2d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mario.cpp">

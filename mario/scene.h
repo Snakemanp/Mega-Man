@@ -136,8 +136,6 @@ private:
 				}
 				else {
 					ended = true;
-					player.reset();
-					return;
 				}
 			}
 		}
