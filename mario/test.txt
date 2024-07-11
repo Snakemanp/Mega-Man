@@ -1,6 +1,0 @@
-Ground Ground_1 750 705 0 0
-Ground Ground 2750 705 0 0
-Ground Ground 4250 705 0 0
-Ground Ground 5750 705 0 0
-Ground Ground 1200 500 0 0
-Enemy Enemy 750 300 0 1500
